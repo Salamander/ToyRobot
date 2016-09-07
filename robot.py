@@ -7,6 +7,7 @@ PROBLEM.md.
 """
 from __future__ import print_function
 import sys
+import re
     
 faces = {
     "NORTH" : {"LEFT" : "WEST", "RIGHT" : "EAST"},
@@ -119,7 +120,7 @@ def report(position, facing):
     print("Pos: {0},{1} Face: {2}".format(position[0], position[1], facing))
     
 
-def process_command(line, position, facing, bounds=(5,5)):
+def process_command(line, position=None, facing=None, bounds=(5,5)):
     """
     Takes a robot and a command, and processes it if able. If the command 
     cannot be processed, the current position and facing is returned unchanged.
@@ -138,7 +139,9 @@ def process_command(line, position, facing, bounds=(5,5)):
     default = position, facing
     
     if line.startswith("PLACE"):
-        line = line.split()[1:]
+        # Split on comma or whitespace, remove empty items, and take everything
+        # after "PLACE"
+        line = [x for x in re.split(r"\s|,", line) if len(x) > 0][1:]
         
         if line[-1] not in faces.keys():
             return default
@@ -153,16 +156,18 @@ def process_command(line, position, facing, bounds=(5,5)):
             return default
             
         return place(place_pos, place_facing, position, facing, bounds)
-        
-    elif line == "MOVE":
-        return move(position, facing, bounds), facing
-        
-    elif line == "LEFT" or line == "RIGHT":
-        return position, turn(direction, facing)
-        
-    elif line == "REPORT":
-        report(position, facing)
-        return default
+    
+    # Only accept PLACE commands until position and facing have a value.    
+    elif(position is not None and facing is not None):            
+        if line == "MOVE":
+            return move(position, facing, bounds), facing
+            
+        elif line == "LEFT" or line == "RIGHT":
+            return position, turn(line, facing)
+            
+        elif line == "REPORT":
+            report(position, facing)
+            return default
     
     return default
     
